@@ -24,7 +24,9 @@ st.write("The name on your Smoothie will be: ", name_on_order)
 #st.write("You fvorite fruit is:", option)
 
 #session = get_active_session()
-my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'))
+fruit_df = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME')).collect()
+fruit_options = [row.FRUIT_NAME for row in fruit_df]
+
 #st.dataframe(data=my_dataframe, use_container_width=True)
 
 ingredients_list = st.multiselect(
