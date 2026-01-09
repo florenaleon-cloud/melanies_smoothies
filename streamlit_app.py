@@ -1,12 +1,14 @@
 import streamlit as st
 
-st.title("Snowflake test")
+st.title("Snowflake connection test")
 
 cnx = st.connection("snowflake")
-session = cnx.session
 
-st.success("Connected!")
+st.success("Connected to Snowflake 🎉")
 
-st.write(
-    session.sql("SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE()").collect()
+df = cnx.query(
+    "SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE()",
+    ttl=0
 )
+
+st.dataframe(df)
