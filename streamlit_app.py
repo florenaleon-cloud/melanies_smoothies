@@ -1,30 +1,49 @@
+# Import python packages
 import streamlit as st
-from snowflake.snowpark.context import get_active_session
 from snowflake.snowpark.functions import col
 
-st.title("🥤 Melanie's Smoothies")
+# ✅ Crear sesión correctamente en Streamlit Cloud
+cnx = st.connection("snowflake", type="snowflake")
+session = cnx.session()
 
-session = get_active_session()
+# Write directly to the app
+st.title(f":cup_with_straw: Example Streamlit App :cup_with_straw: {st.__version__}")
 
-fruit_df = session.table("FRUIT_OPTIONS").select(col("FRUIT_NAME"))
-fruit_list = [row["FRUIT_NAME"] for row in fruit_df.collect()]
+st.write("""Choose the fruits you want in your custom Smoothie!""")
 
-ingredients = st.multiselect(
-    "Choose up to 5 ingredients:",
-    fruit_list,
+name_on_order = st.text_input('Name on Smoothie:')
+st.write("The name on your Smoothie will be:", name_on_order)
+
+# ✅ Fetch fruit options and convert to Python list
+fruit_df = (
+    session
+    .table("smoothies.public.fruit_options")
+    .select(col("FRUIT_NAME"))
+    .collect()
+)
+
+fruit_options = [row.FRUIT_NAME for row in fruit_df]
+
+ingredients_list = st.multiselect(
+    'Choose up to 5 ingredients:',
+    fruit_options,
     max_selections=5
 )
 
-name_on_order = st.text_input("Name on Smoothie:")
+if ingredients_list:
+    ingredients_string = ""
+    for fruit_chosen in ingredients_list:
+        ingredients_string += fruit_chosen + " "
 
-if st.button("Submit Order") and ingredients:
-    ingredients_string = " ".join(ingredients)
+    my_insert_stmt = (
+        "INSERT INTO smoothies.public.orders (ingredients, name_on_order) "
+        "VALUES ('" + ingredients_string + "','" + name_on_order + "')"
+    )
 
-    session.sql(
-        f"""
-        INSERT INTO ORDERS (ingredients, name_on_order)
-        VALUES ('{ingredients_string}', '{name_on_order}')
-        """
-    ).collect()
+    st.write(my_insert_stmt)
 
-    st.success(f"Your Smoothie is ordered, {name_on_order}! ✅")
+time_to_insert = st.button('Submit Order')
+
+if time_to_insert and ingredients_list:
+    session.sql(my_insert_stmt).collect()
+    st.success('Your Smoothie is ordered, ' + name_on_order + '!', icon="✅")
