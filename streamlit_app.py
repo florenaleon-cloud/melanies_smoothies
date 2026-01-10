@@ -1,55 +1,34 @@
-# Import python packages
 import streamlit as st
 from snowflake.snowpark.functions import col
 
-# ✅ Crear sesión correctamente en Streamlit Cloud
-cnx = st.connection("snowflake", type="snowflake")
+# Snowflake connection (Streamlit Cloud)
+cnx = st.connection("snowflake")
 session = cnx.session()
 
-# Write directly to the app
-st.title(f":cup_with_straw: Example Streamlit App :cup_with_straw: {st.__version__}")
+st.title("🥤 Example Streamlit App")
+st.write("Choose the fruits you want in your custom Smoothie!")
 
-st.write("""Choose the fruits you want in your custom Smoothie!""")
+name_on_order = st.text_input("Name on Smoothie:")
 
-name_on_order = st.text_input('Name on Smoothie:')
-st.write("The name on your Smoothie will be:", name_on_order)
-
-# ✅ Fetch fruit options and convert to Python list
-fruit_df = (
-    session
-    .table("smoothies.public.fruit_options")
-    .select(col("FRUIT_NAME"))
-    .collect()
-)
-
-fruit_options = [row.FRUIT_NAME for row in fruit_df]
+fruit_df = session.sql(
+    "SELECT FRUIT_NAME FROM SMOOTHIES.PUBLIC.FRUIT_OPTIONS"
+).to_pandas()
 
 ingredients_list = st.multiselect(
-    'Choose up to 5 ingredients:',
-    fruit_options,
+    "Choose up to 5 ingredients:",
+    fruit_df["FRUIT_NAME"].tolist(),
     max_selections=5
 )
 
-if ingredients_list:
-    ingredients_string = ""
-    for fruit_chosen in ingredients_list:
-        ingredients_string += fruit_chosen + " "
+if st.button("Submit Order") and ingredients_list:
+    ingredients_string = " ".join(ingredients_list)
 
-    my_insert_stmt = (
-        "INSERT INTO smoothies.public.orders (ingredients, name_on_order) "
-        "VALUES ('" + ingredients_string + "','" + name_on_order + "')"
-    )
-
-    st.write(my_insert_stmt)
-
-time_to_insert = st.button('Submit Order')
-
-if time_to_insert and ingredients_list:
-    session.sql(my_insert_stmt).collect()
-    st.success('Your Smoothie is ordered, ' + name_on_order + '!', icon="✅")
-
-st.write(
     session.sql(
-        "SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE()"
+        f"""
+        INSERT INTO SMOOTHIES.PUBLIC.ORDERS
+        (ingredients, name_on_order)
+        VALUES ('{ingredients_string}', '{name_on_order}')
+        """
     ).collect()
-)
+
+    st.success(f"Your Smoothie is ordered, {name_on_order}!", icon="✅")
