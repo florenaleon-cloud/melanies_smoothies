@@ -1,29 +1,19 @@
-# Import python packages
 import streamlit as st
 from snowflake.snowpark import Session
 from snowflake.snowpark.functions import col
 
-# ----------------------------------------
-# Crear sesión usando los secretos ya configurados en [connections.snowflake]
-# ----------------------------------------
-# Esto reemplaza get_active_session() y lee automáticamente los secretos
-session = Session.builder.from_connection("snowflake").create()
+# Crear sesión usando los secretos de la app (connections.snowflake)
+session = Session.builder.configs(st.secrets["connections"]["snowflake"]).create()
 
-# ----------------------------------------
 # Título y descripción
-# ----------------------------------------
 st.title(f":cup_with_straw: Example Streamlit App :cup_with_straw: {st.__version__}")
 st.write("Choose the fruits you want in your custom Smoothie!")
 
-# ----------------------------------------
 # Nombre en el pedido
-# ----------------------------------------
 name_on_order = st.text_input('Name on Smoothie:')
 st.write("The name on your Smoothie will be: ", name_on_order)
 
-# ----------------------------------------
 # Obtener opciones de frutas desde Snowflake
-# ----------------------------------------
 my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'))
 
 ingredients_list = st.multiselect(
@@ -43,9 +33,7 @@ if ingredients_list:
 
     st.write(my_insert_stmt)
 
-# ----------------------------------------
 # Botón para enviar pedido
-# ----------------------------------------
 time_to_insert = st.button('Submit Order')
 
 if time_to_insert:
