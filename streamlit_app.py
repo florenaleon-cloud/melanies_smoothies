@@ -44,5 +44,5 @@ if time_to_insert:
         st.error("Please enter your name and select at least one ingredient!")
 
 import requests
-smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon") 
-st.text(smoothiefroot_response.json())
+smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon", timeout=10) 
+st.text(smoothiefroot_response)
