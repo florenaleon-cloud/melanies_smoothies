@@ -1,4 +1,5 @@
 import streamlit as st
+import requests
 from snowflake.snowpark import Session
 from snowflake.snowpark.functions import col
 
@@ -22,9 +23,24 @@ ingredients_list = st.multiselect(
     max_selections=5
 )
 
-# Construir la cadena de ingredientes
+# Construir la cadena de ingredientes + llamar al API
 if ingredients_list:
-    ingredients_string = ' '.join(ingredients_list)
+
+    ingredients_string = ''
+
+    for fruit_chosen in ingredients_list:
+        ingredients_string += fruit_chosen + ' '
+
+        st.subheader(f"Nutrition data for {fruit_chosen}")
+
+        smoothiefroot_response = requests.get(
+            f"https://my.smoothiefroot.com/api/fruit/{fruit_chosen.lower()}"
+        )
+
+        sf_df = st.dataframe(
+            data=smoothiefroot_response.json(),
+            use_container_width=True
+        )
 
     my_insert_stmt = (
         "insert into smoothies.public.orders(ingredients,name_on_order) "
@@ -39,11 +55,6 @@ time_to_insert = st.button('Submit Order')
 if time_to_insert:
     if ingredients_list and name_on_order:
         session.sql(my_insert_stmt).collect()
-        st.success('Your Smoothie is ordered, ' + name_on_order+'!', icon="✅")
+        st.success('Your Smoothie is ordered, ' + name_on_order + '!', icon="✅")
     else:
         st.error("Please enter your name and select at least one ingredient!")
-
-import requests
-smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon") 
-#st.text(smoothiefroot_response.json())
-sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
